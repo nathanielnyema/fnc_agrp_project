@@ -1,0 +1,24 @@
+name: fnc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - seaborn=0.12.2
+  - pandas>1.3
+  - numpy
+  - statsmodels
+  - scipy
+  - tqdm
+  - matplotlib
+  - pingouin
+  - ipykernel
+  - openpyxl
+  - pip
+  - conda-forge::rpy2
+  - conda-forge::r-base
+  - conda-forge::r-tidyverse
+  - conda-forge::r-rstatix
+  - conda-forge::r-lme4
+  - conda-forge::r-lmertest
+  - pip:
+    - tdt

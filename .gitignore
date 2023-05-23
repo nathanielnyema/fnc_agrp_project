@@ -3,4 +3,5 @@
 *.pyc
 *.zip
 */data/*
+data/*
 *.ai
