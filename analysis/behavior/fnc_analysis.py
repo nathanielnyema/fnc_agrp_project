@@ -47,18 +47,6 @@ def average_test_data(df, Chr2, values = 'total_licks'):
     return df.loc[Chr2,].pivot_table(index=['mouse','CS'], values = values)
 
 
-def prep_data_glmm(df):
-    """
-    convert total testing licks dataframe to a format 
-    we can feed into a glmm
-    """
-    
-    licks = df.total_licks.unstack('CS')
-    d = licks['+']/(licks['+'] + licks['-'])
-    d.name = 'pref'
-    d = d.to_frame()
-    d['tots'] = licks['+'] + licks['-']
-    return d.reset_index()
 
 def lick_microstructure(dft, dur, thresh = 0.5):
     
@@ -106,7 +94,7 @@ def lick_microstructure(dft, dur, thresh = 0.5):
 ############################
 
 def two_bottle_plot(s, c, ax = None, mt_method = "holm-sidak", palette ='magma', lw = 1.5, ms = 5, y = 'total_licks',
-                    plot_sig = True, alpha = .3, all_paired = False, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], t=30):
+                    plot_sig = True, alpha = .3, all_paired = False, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], t=30):
     """
     box plot comparing total average testing day licks for stim and ctl
     
@@ -138,7 +126,7 @@ def two_bottle_plot(s, c, ax = None, mt_method = "holm-sidak", palette ='magma',
     
     c['x'] = c.index.get_level_values('CS').map(lambda x: locs[0] if x == '-' else locs[1])
     s['x'] = s.index.get_level_values('CS').map(lambda x: locs[2] if x == '-' else locs[3])
-   
+    
     s.groupby('mouse').plot.line(x='x', y= y, marker = 'o', 
                                  alpha = alpha, lw = lw, color = 'k',
                                  ax = g, legend = False, ms = ms);
@@ -159,13 +147,13 @@ def two_bottle_plot(s, c, ax = None, mt_method = "holm-sidak", palette ='magma',
         plot_significance(p_csp_csm_ctl, ax, x1=-.2, x2=.2, yy=1.1*y, h=.05*y)
         plot_significance(p_csm_csm, ax, x1=-.2, x2=.8, yy=1.25*y, h=.05*y)
         plot_significance(p_csp_csp, ax, x1=.2, x2=1.2, yy=1.4*y, h=.05*y)
-    ax.set_ylabel(f'Mean Licks per {t} min Testing Session')
+    ax.set_ylabel(f'Lick/Test Session')
     ax.set_xlabel("")
     return ax, stats
 
 
 def cumm_test_licks_plot(s, c, ax = None, mt_method = "holm-sidak", p_tot = None, palette ='magma', values = 'total_licks',
-                         plot_sig = True, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], ms = 4, alpha = .3,):
+                         plot_sig = True, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], ms = 4, alpha = .3):
     """
     violin plot comparing total average testing day licks for stim and ctl
     
@@ -208,7 +196,7 @@ def cumm_test_licks_plot(s, c, ax = None, mt_method = "holm-sidak", p_tot = None
 
 
 def two_bottle_pref_plot_vl(s, c, ax = None, mt_method = "holm-sidak", p_pref = None, palette ='magma', values = 'total_licks', use_glm = False, 
-                            ms = 4, alpha = .3, plot_sig = True, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], t=30):
+                            ms = 4, alpha = .3, plot_sig = True, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], t=30):
     """
     violin plot comparing % cs+ licks stim v ctl
     
@@ -235,7 +223,7 @@ def two_bottle_pref_plot_vl(s, c, ax = None, mt_method = "holm-sidak", p_pref = 
                     order = groups[::-1], saturation=10, palette =palette, alpha=.3, cut = 0)
     ax.set_xlim(-.5,1.5)
 
-    ax.set_ylabel(f'Cummulative Preference Index Per {t} min Testing Session')
+    ax.set_ylabel(f'Preference Index')
     ax.set_xlabel("")
     ax.set_ylim([-.1,1.4])
     sns.despine()
@@ -249,7 +237,7 @@ def two_bottle_pref_plot_vl(s, c, ax = None, mt_method = "holm-sidak", p_pref = 
             p_pref = model.pvalues.loc[model.pvalues.index.str.contains("Condition")].iloc[0]
             res = model.summary()
         else:
-            res = st.ranksums(df.loc[groups[0]]['pref'],df.loc[groups[1]]['pref'])
+            res = st.mannwhitneyu(df.loc[groups[0]]['pref'],df.loc[groups[1]]['pref'])
             _, p_pref = res
     if plot_sig:
         #plot the stats
@@ -258,7 +246,7 @@ def two_bottle_pref_plot_vl(s, c, ax = None, mt_method = "holm-sidak", p_pref = 
 
 
 
-def training_plot(s,c, ax=None, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], colors = sns.color_palette('Set2', 2)):
+def training_plot(s,c, ax=None, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], colors = sns.color_palette('Set2', 2), ms=2, capsize=2, lw=1):
     """
     plot mean total licks over training
     
@@ -281,26 +269,26 @@ def training_plot(s,c, ax=None, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::A
     
     # stim plots
     ax.errorbar(x, mns_s.loc['-'].values, sems_s.loc['-'].values, ls = '--',
-                marker='o', capsize=4, lw=3, ms = 9, color = colors[0],
+                marker='o', capsize=capsize, lw=lw, ms = ms, color = colors[0],
                 label = fr"{groups[0]} CS -")
     ax.errorbar(x, mns_s.loc['+'].values, sems_s.loc['+'].values, ls = '-',
-                marker='o', capsize=4, lw=3, ms = 9, color = colors[0],
+                marker='o', capsize=capsize, lw=lw, ms = ms, color = colors[0],
                 label = fr"{groups[0]} CS +")
     # ctl plots
     ax.errorbar(x, mns_c.loc['-'].values, sems_c.loc['-'].values, ls = '--',
-                marker='o', capsize=4, lw=3, ms = 9, color = colors[1],
+                marker='o', capsize=capsize, lw=lw, ms = ms, color = colors[1],
                 label = fr"{groups[1]} CS -")
     ax.errorbar(x, mns_c.loc['+'].values, sems_c.loc['+'].values, ls = '-',
-                marker='o', capsize=4, lw=3, ms = 9, color = colors[1],
+                marker='o', capsize=capsize, lw=lw, ms = ms, color = colors[1],
                 label = fr"{groups[1]} CS +")
     
     sns.despine(ax=ax)
-    ax.set(xticks = x, xlabel = 'Training Day', ylabel ='Licks per 30 min Training Session');
+    ax.set(xticks = x, xlabel = 'Training Day', ylabel ='Licks/Training Session');
     ax.legend(loc='lower left', bbox_to_anchor = (0,1), frameon = False, ncol = 2)
     return ax
 
 
-def plot_t_to_end(s, c, ax = None, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], 
+def plot_t_to_end(s, c, ax = None, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], 
                   colors = sns.color_palette('Set1', 2)):
     """
     plot the time from infusion start to session end for each session
@@ -347,27 +335,130 @@ def plot_t_to_end(s, c, ax = None, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$
     return ax, s, c
     
 
+def plot_sex_diff_pref(pref, ax = None, mt_method = "holm-sidak", palette ='magma', 
+                      groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$']):
+    
+    #plot preference by sex
+    pref = pref.copy()
+    pref['x'] = (0.5*pref.Chr2.astype(int)) + (2*(pref.sex=='F').astype(int) - 1) + 0.05*np.random.randn(len(pref))
+    pref['Total Lick Bursts'] = pref['tot']
+    pref['Strain'] = pref['Chr2'].apply(lambda x: groups[::-1][x])
 
-## These plotting functions may not work...
-
-def summ_plot_pref_t(s1, s2, c1, c2, groups = [r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], ax = None):
-    """
-    """
-    if ax is None: _,ax = plt.subplots(1,1)
-    keys = [f'{groups[1]}/Day 1', f'{groups[1]}/Day 2',
-            f'{groups[0]}/Day 1', f'{groups[0]}/Day 2']
-    d = pd.concat((c1, c2, s1, s2), keys = keys)
-    d.index.set_names('Condition/Day', level = 0, inplace = True)
-    sns.barplot(data = d.reset_index(), x ='Condition/Day', ax=ax,
-                y = 'Total Licks', hue = 'CS', saturation =1, errorbar=None);
-    for i,v in enumerate(keys):
-        y = d.loc[v].reset_index().pivot('mouse', 'CS', 'Total Licks')
-        ax.plot([i-.2, i+.2], y.T.values, 'k',alpha = .3, marker='o', ms=2)
-    ax.axvline(1.5, c='gray', ls='--')
-    sns.despine(ax=ax)  
-    return ax
+    if ax is None:
+        _, ax = plt.subplots(1,1)
+    g = sns.scatterplot(pref, x='x', y='pref', size = 'Total Lick Bursts', hue = 'Strain', palette = palette, ax=ax)
+    xmn = pref.groupby(['Chr2','sex']).x.mean()
+    pmn = pref.groupby(['Chr2','sex']).apply(lambda x: (x.tot@x.pref)/x.tot.sum())
+    for i,j in zip(xmn, pmn):
+        g.plot([i-0.1, i+0.1], [j,j], color = 'k', alpha=0.5)
 
 
+    g.set_xlim(-1.8,2.3)
+    g.set_xticks([-0.75, 1.25])
+    g.set_xticklabels(['Male', 'Female'])
+    g.set_xlabel("")
+    g.set_ylabel("Burst Preference Index")
+    g.legend(loc = 'upper left', bbox_to_anchor = (1,1), frameon=False)
+
+
+
+    # compute stats
+    sex_comp = (pref.groupby('Chr2')
+                    .apply(lambda x: smf.glm('pref ~ 1 + sex', data = x.reset_index(), 
+                                             family = sm.families.Binomial(), 
+                                             freq_weights = x.tot).fit())
+                    .apply(lambda x:  pd.Series({'coef': x.params['sex[T.M]'].astype(str) + "±" + x.bse['sex[T.M]'].astype(str) , 
+                                                 't': x.tvalues['sex[T.M]'],
+                                                 'CI': x.conf_int().apply(lambda x: x.round(4).astype(str).loc[0] + ', ' + x.round(4).astype(str).loc[1], axis=1).loc['sex[T.M]'],
+                                                 'p-value': x.pvalues['sex[T.M]'],
+                                                 'df': x.df_resid}))
+                    .reset_index()
+    )
+
+    stim_comp = (pref.groupby('sex')
+                     .apply(lambda x: smf.glm('pref ~ 1 + Chr2', data = x, 
+                                              family = sm.families.Binomial(), 
+                                              freq_weights = x.tot).fit())
+                     .apply(lambda x:  pd.Series({'coef': x.params['Chr2[T.True]'].rounastype(str) + "±" + x.bse['Chr2[T.True]'].astype(str), 
+                                                  't': x.tvalues['Chr2[T.True]'], 
+                                                  'CI': x.conf_int().apply(lambda x: x.round(4).astype(str).loc[0] + ', ' + x.round(4).astype(str).loc[1], axis=1).loc['Chr2[T.True]'],
+                                                  'p-value': x.pvalues['Chr2[T.True]'],
+                                                  'df': x.df_resid}))
+                     .reset_index()
+    )
+
+    pref_sex_diff_stats = pd.concat({'Male vs Female': sex_comp, 
+                                         'Stim vs Control': stim_comp}, 
+                                        names = ['comparison']).droplevel(1).reset_index()
+    pref_sex_diff_stats['Corrected p-value'] = multipletests(pref_sex_diff_stats['p-value'], method = mt_method)[1]
+    pcorr = pref_sex_diff_stats.set_index(['comparison', 'Chr2', 'sex'])['Corrected p-value']
+
+    # plot the stats
+    y=pref.pref.max()
+    plot_significance(pcorr.droplevel('sex').loc['Male vs Female', True].iloc[0],
+                      g, x1=-0.5, x2=1.5, yy=1.4*y, h=.05*y)
+    plot_significance(pcorr.droplevel('sex').loc['Male vs Female', False].iloc[0],
+                      g, x1=-1, x2=1, yy=1.25*y, h=.05*y)
+    plot_significance(pcorr.droplevel('Chr2').loc['Stim vs Control', 'F'].iloc[0], 
+                      g, x1=1, x2=1.5, yy= 1.1*y, h=.05*y)
+    plot_significance(pcorr.droplevel('Chr2').loc['Stim vs Control', 'M'].iloc[0], 
+                      g, x1=-1, x2=-.5, yy=1.1*y, h=.05*y)
+
+    sns.despine(ax=g)
+    
+    return g, pref_sex_diff_stats    
+
+def plot_sex_diff(df, key, ax = None, mt_method = "holm-sidak", palette ='magma', 
+                  groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], ylabel = None):
+    
+    if ax is None:
+        _, ax = plt.subplots(1,1)
+    if ylabel is None:
+        ylabel = key
+    # glucose
+    # plot training licks split by strain and sex
+    sns.swarmplot(data = df, x = 'sex', y = key, hue = 'Chr2', 
+                  order = ['M','F'], hue_order=[False,True],
+                  dodge = True, palette = 'dark:k', alpha = .5,  ax = ax, legend = False)
+    sns.violinplot(data =df, x = 'sex', y = key, hue = 'Chr2', 
+                   saturation = .9, order = ['M','F'], hue_order=[False,True],
+                   linewidth = 0, palette = palette, ax = ax)
+    handles, labels = ax.get_legend_handles_labels() 
+    ax.legend(handles, groups[::-1], loc = 'lower left', 
+             frameon = False, bbox_to_anchor=(0,1.1))
+    ax.set_xticklabels(["Male", "Female"], fontsize = 8)
+    ax.set_xlabel("")
+    ax.set_ylabel(ylabel, fontsize = 8)
+
+
+    # compute stats
+    sex_comp = (df.set_index(['Chr2','sex','mouse']).groupby('Chr2')[key]
+                  .apply(lambda x: st.ttest_ind(x.loc[:,'M'], x.loc[:,'F'], equal_var = False) + (x.shape[0] - 2,))
+                  .apply(lambda x: pd.Series(x, index = ('t', 'p-value', 'df')))
+               )
+    stim_comp = (df.set_index(['Chr2','sex','mouse']).groupby('sex')[key]
+                   .apply(lambda x: st.ttest_ind(x.loc[True,], x.loc[False,], equal_var = False) + (x.shape[0] - 2,))
+                   .apply(lambda x: pd.Series(x, index = ('t', 'p-value', 'df')))
+                )
+
+    sex_diff_stats = pd.concat({'Male vs Female': sex_comp.reset_index(), 
+                                'Stim vs Control': stim_comp.reset_index()},
+                               names = ['comparison']).droplevel(1).reset_index()
+    sex_diff_stats['Corrected p-value'] = multipletests(sex_diff_stats['p-value'], method = mt_method)[1]
+    pcorr = sex_diff_stats.set_index(['comparison', 'Chr2', 'sex'])['Corrected p-value']
+
+    # plot the stats
+    y=df[key].max()
+    plot_significance(pcorr.droplevel('sex').loc['Male vs Female', True].iloc[0],
+                      ax, x1=.2, x2=1.2, yy=1.4*y, h=.05*y)
+    plot_significance(pcorr.droplevel('sex').loc['Male vs Female', False].iloc[0],
+                      ax, x1=-.2, x2=.8, yy=1.25*y, h=.05*y)
+    plot_significance(pcorr.droplevel('Chr2').loc['Stim vs Control', 'F'].iloc[0], 
+                      ax, x1=.8, x2=1.2, yy= 1.1*y, h=.05*y)
+    plot_significance(pcorr.droplevel('Chr2').loc['Stim vs Control', 'M'].iloc[0], 
+                      ax, x1=-.2, x2=.2, yy=1.1*y, h=.05*y)
+    # ax.set_xlim(-.5,1.5)
+    return ax, sex_diff_stats
 
 
 def plot_training_micro(burst_summ, stat, palette = 'Set1', ylabel = None, ax = None):
@@ -403,128 +494,32 @@ def plot_training_micro(burst_summ, stat, palette = 'Set1', ylabel = None, ax = 
     
     return ax
 
-def plot_coeffs(model, data, model_eq, ax = None):
-    y, X = dmatrices(model_eq, data, return_type='dataframe')
-    st_ratio = X.std(axis = 0)/y.std().values[0]
-    st_coeff = (model.params * st_ratio).dropna()
-    st_sem = (model.bse * st_ratio).dropna()
-    st_coeff = st_coeff.loc[st_coeff.index!='Intercept'].sort_index()
-    st_sem = st_sem.loc[st_sem.index!='Intercept'].sort_index()
-    
-    if ax is None:
-        _, ax = plt.subplots(1,1)
-    ax.errorbar(y = st_coeff.index, x = st_coeff, xerr = st_sem, 
-                 marker = 'o', ls = 'none');
-    ax.axvline(0, ls = '--')
-    ax.set_xlabel('Standardized Coefficient')
-    
-    return ax
+############################
+## FUNCTIONS FOR STATS ##
+############################
 
-
-def plot_pref_d(s, c, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], d1_pref = False, values = 'total_licks', 
-                x = 'Chr2', ax = None, alpha = .3, lw = 1.5, ms = 5,):
-    
-    df = pd.concat({groups[0]: s, groups[1]: c}, names = [x])
-    d1 = (df.unstack('CS')[values])
-    pref = d1["+"]/(d1["+"] + d1["-"])
-    pref.name = 'pref'
-    pref = pref.reset_index()
-    pref['Day'] = 'Testing Day ' + (pref.day + 1).astype(int).astype(str)
-    
-    if d1_pref:
-        _pref = pref.set_index([x, 'mouse', 'day']).unstack('day')
-        pref = _pref.loc[_pref['pref',0]>0.5].stack('day').reset_index()
-    if ax is None:
-        _, ax = plt.subplots(1,1)
-    a = sns.barplot(data = pref, x = x, y = 'pref', ax = ax, 
-                    palette = sns.color_palette('Reds_r',3)[:2],
-                    hue = 'Day', errorbar = None, order = [groups[1], groups[0]], 
-                    hue_order = ['Testing Day 1', 'Testing Day 2'])
-    
-    handles, labels = a.get_legend_handles_labels()
-
-    check_bar = lambda x: isinstance(x, mpl.patches.Rectangle)
-    bars = list(filter( check_bar, a.get_children()))
-    bars = list(filter( lambda x: sum(x.get_facecolor()) != 4, bars))
-    locs = sorted([b.get_x() + b.get_width()/2 for b in bars])
-
-
-    pref.loc[pref[x]==groups[0],'x'] = pref.loc[pref[x]==groups[0]].day.map(lambda x: locs[2] if x == 0 else locs[3])
-    pref.loc[pref[x]==groups[1], 'x'] = pref.loc[pref[x]==groups[1]].day.map(lambda x: locs[0] if x == 0 else locs[1])
-
-    pref.groupby('mouse').plot.line(x='x', y='pref', marker = 'o', alpha = alpha,
-                                    color = 'k', ax = ax, legend = False, ms = ms, lw = lw);
-    a.legend(handles, labels, loc = 'lower left', bbox_to_anchor = (0,1), frameon = False)
-    sns.despine()
-    ax.set(xlabel = '',
-           ylabel = 'Preference Index')
-    return ax
-
-def plot_tot_d(s, c, groups=[r'$AgRP^{Cre}$::Ai32', r'$AgRP^{Cre}$::Ai9'], d1_pref = False, values = 'total_licks',
-               x = 'Chr2', ax = None, alpha = .3, lw = 1.5, ms = 5, mt_method = 'holm-sidak'):
-    
-    df = pd.concat({groups[0]: s, groups[1]: c}, names = [x])
-    d1 = (df.reset_index().set_index([x, 'mouse', 'day', 'CS']).unstack('CS')[values])
-    tot = df.groupby([x,'mouse','day'])[values].sum()
-    tmp = pd.concat({'pref': d1["+"]/tot , values: tot}, axis = 1).reset_index()
-    tmp['Day'] = 'Testing Day ' + (tmp.day + 1).astype(int).astype(str)
-    
-    if d1_pref:
-        _tmp = tmp.set_index([x, 'mouse', 'day']).unstack('day')
-        tmp = _tmp.loc[_tmp['pref',0]>0.5].stack('day').reset_index()
-        
-    if ax is None:
-        _, ax = plt.subplots(1,1)
-    a = sns.barplot(data = tmp, x = x, y = values, ax = ax, 
-                    palette = sns.color_palette('Reds_r',3)[:2],
-                    hue = 'Day', errorbar = None, order = groups[::-1], 
-                    hue_order = ['Testing Day 1', 'Testing Day 2'])
-    handles, labels = a.get_legend_handles_labels()
-    check_bar = lambda x: isinstance(x, mpl.patches.Rectangle)
-    bars = list(filter( check_bar, a.get_children()))
-    bars = list(filter( lambda x: sum(x.get_facecolor()) != 4, bars))
-    locs = sorted([b.get_x() + b.get_width()/2 for b in bars])
-    tmp.loc[tmp[x] == groups[0], 'x'] = tmp.loc[tmp[x] == groups[0]].day.map(lambda x: locs[2] if x == 0 else locs[3])
-    tmp.loc[tmp[x] == groups[1], 'x'] = tmp.loc[tmp[x] == groups[1]].day.map(lambda x: locs[0] if x == 0 else locs[1])
-    tmp.groupby('mouse').plot.line(x='x', y=values, marker = 'o', alpha = .3,
-                                    color = 'k', ax = ax, legend = False, ms = ms, lw = lw );
-    a.legend(handles, labels, loc = 'lower left', bbox_to_anchor = (0,1), frameon = False)
-    sns.despine()
-    ax.set(xticks = [0,1],
-           xticklabels = groups[::-1],
-           xlabel = '',
-           ylabel = 'Total Licks')
-    tmp = tmp.set_index([x, 'mouse','day'])
-
-    t_stim_v_ctl_0, p_stim_v_ctl_0 = st.ttest_ind(tmp.loc[groups[0],:,0][values], tmp.loc[groups[1],:,0][values])
-    t_stim_v_ctl_1, p_stim_v_ctl_1 = st.ttest_ind(tmp.loc[groups[0],:,1][values], tmp.loc[groups[1],:,1][values])
-    t_stim_0v1, p_stim_0v1 = st.ttest_rel(tmp.loc[groups[0],:,0][values],
-                                          tmp.loc[groups[0],:,1][values])
-    t_ctl_0v1,  p_ctl_0v1  = st.ttest_rel(tmp.loc[groups[1],:,0][values],
-                                          tmp.loc[groups[1],:,1][values])
-    _, (p_stim_v_ctl_0_corr,  p_stim_v_ctl_1_corr,
-        p_stim_0v1_corr, p_ctl_0v1_corr), _, _ = multipletests([p_stim_v_ctl_0,  p_stim_v_ctl_1,
-                                                      p_stim_0v1, p_ctl_0v1], method = mt_method)
-    res = pd.DataFrame({"statistic":   [t_stim_v_ctl_0, t_stim_v_ctl_1, t_stim_0v1, t_ctl_0v1],
-                        "pvalue"   :   [p_stim_v_ctl_0, p_stim_v_ctl_1, p_stim_0v1, p_ctl_0v1],
-                        "pvalue_corr": [p_stim_v_ctl_0_corr, p_stim_v_ctl_1_corr, p_stim_0v1_corr, p_ctl_0v1_corr],
-                        "paired": [False, False, True, True]},
-                        index = ['stim vs. ctl day 1', 'stim vs. ctl day 2', 'day 1 vs. day 2 stim', 'day 1 vs. day 2 ctl'])
-    
-
-    y=tmp[values].max()
-    plot_significance(p_stim_0v1, ax, x1=.8, x2=1.2, yy= 1.1*y, h=.05*y)
-    plot_significance(p_ctl_0v1, ax, x1=-.2, x2=.2, yy=1.1*y, h=.05*y)
-    plot_significance(p_stim_v_ctl_0, ax, x1=-.2, x2=.8, yy=1.25*y, h=.05*y)
-    plot_significance(p_stim_v_ctl_1, ax, x1=.2, x2=1.2, yy=1.4*y, h=.05*y)
-    
-    return ax, res
-
-
-#####################################
-## SUPPLEMENTARY PLOTTING FUNCTION ##
-#####################################
-
+def model_to_str(model, dec = 4):
+    beta = 'β=' + model.params.round(dec).astype(str)
+    ci =  model.conf_int().round(dec).astype(str)
+    ci = '95% CI [' + ci.iloc[:,0] + ', ' + ci.iloc[:,1] + ']'
+    if model.use_t:
+        stat = f't({model.df_resid})=' + model.tvalues.round(dec).astype(str)
+    else:
+        stat = 'z=' + (model.params/model.bse).round(dec).astype(str)
+    pvals = model.pvalues
+    def eval_p(p):
+        if p<.0001:
+            return "p<.0001"
+        elif p<.001:
+            return "p<.001"
+        elif p<.01:
+            return "p<.01"
+        else:
+            return f"p={p:.2f}"
+    pstr = pvals.apply(eval_p)
+    res = (beta + '; ' + ci + '; ' + stat + '; ' + pstr).rename('Result').to_frame()
+    res['Significance'] = pvals.apply(check_significance)
+    return res
 
 def check_significance(p):
     """
@@ -534,7 +529,6 @@ def check_significance(p):
     crit_vals=np.array([.05,.01,.001,.0001])
     sig_labels=['ns','*','**','***','****']
     return sig_labels[np.digitize(p,crit_vals)]
-
 
 def plot_significance(p, ax, x1, x2, yy, h):
     """
@@ -585,7 +579,10 @@ def two_bottle_stats(s, c, mt_method = "holm-sidak", all_paired = False, groups 
                         "pvalue_corr": [p_csp_csm_stim_corr, p_csp_csm_ctl_corr, p_csp_csp_corr, p_csm_csm_corr],
                         "df" :         [df_csp_csm_stim, df_csp_csm_ctl, df_csp_csp, df_csm_csm],
                         "paired": [True, True, False, False] if not all_paired else [True, True, True, True]},
-                        index = [f'CS+ vs. CS- {groups[0]}', f'CS+ vs. CS- {groups[1]}', f'CS+ {groups[0]} vs. CS+ {groups[1]}', f'CS- {groups[0]} vs. CS- {groups[1]}'])
+                        index = [f'CS+ vs. CS- {groups[0]}', 
+                                 f'CS+ vs. CS- {groups[1]}', 
+                                 f'CS+ {groups[0]} vs. CS+ {groups[1]}', 
+                                 f'CS- {groups[0]} vs. CS- {groups[1]}'])
 
     return res
 

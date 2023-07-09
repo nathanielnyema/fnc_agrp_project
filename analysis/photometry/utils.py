@@ -115,7 +115,7 @@ def randomize(a, event, ev_thresh, w, niters, norm = 'none', base_len = None, tr
 
 
 def plot_peri(mn, ctl = None, phase="Training", saveroot = "", savename = "", figsize = (7,5), save = False,
-              vmin = -1, vmax = 1, ylim = (-1,1), vlabel = 'Z-Score', ylabel = r'Z-Scored $\frac{\Delta F}{F}$'):
+              vmin = -1, vmax = 1, ylim = (-1,1), linewidth = 1, vlabel = 'Z-Score', ylabel = r'Z-Scored $\frac{\Delta F}{F}$'):
     
     mn = mn.sort_index()
     w = mn.columns.max()
@@ -124,20 +124,20 @@ def plot_peri(mn, ctl = None, phase="Training", saveroot = "", savename = "", fi
     fig, ax = plt.subplots(3,days.max(), figsize = figsize, gridspec_kw={'height_ratios': [.8, 1, 1]})
     cbar_ax = fig.add_axes([.95, .2, .03, .4])
     for i in days:
-        ax[0,i-1].plot(mn.loc[i,'+'].mean(axis=0), label = 'CS+')
+        ax[0,i-1].plot(mn.loc[i,'+'].mean(axis=0), label = 'CS+', lw=linewidth)
         ax[0,i-1].fill_between(mn.columns.astype(float), alpha = .3,
                          y1= (mn.loc[i,'+'].mean(axis=0) - mn.loc[i,'+'].sem(axis=0)), 
                          y2 = (mn.loc[i,'+'].mean(axis=0) + mn.loc[i,'+'].sem(axis=0)))
-        ax[0,i-1].plot(mn.loc[i,'-'].mean(axis=0), label = f'CS-')
+        ax[0,i-1].plot(mn.loc[i,'-'].mean(axis=0), label = f'CS-', lw=linewidth)
         ax[0,i-1].fill_between(mn.columns.astype(float), alpha = .3,
                          y1= (mn.loc[i,'-'].mean(axis=0) - mn.loc[i,'-'].sem(axis=0)), 
                          y2 = (mn.loc[i,'-'].mean(axis=0) + mn.loc[i,'-'].sem(axis=0)))
         if ctl is not None:
-            ax[0,i-1].plot(ctl.loc[i,'+'].mean(axis=0), c='gray', label = 'CS+ randomized')
+            ax[0,i-1].plot(ctl.loc[i,'+'].mean(axis=0), c='gray', label = 'CS+ randomized', lw=linewidth)
             ax[0,i-1].fill_between(ctl.columns.astype(float), alpha = .3, color = 'gray',
                              y1= (ctl.loc[i,'+'].mean(axis=0) - ctl.loc[i,'+'].sem(axis=0)), 
                              y2 = (ctl.loc[i,'+'].mean(axis=0) + ctl.loc[i,'+'].sem(axis=0)))
-            ax[0,i-1].plot(ctl.loc[i,'-'].mean(axis=0), c='lightgray', label = 'CS- randomized')
+            ax[0,i-1].plot(ctl.loc[i,'-'].mean(axis=0), c='lightgray', label = 'CS- randomized', lw=linewidth)
             ax[0,i-1].fill_between(ctl.columns.astype(float), alpha = .3, color = 'lightgray',
                              y1= (ctl.loc[i,'-'].mean(axis=0) - ctl.loc[i,'-'].sem(axis=0)), 
                              y2 = (ctl.loc[i,'-'].mean(axis=0) + ctl.loc[i,'-'].sem(axis=0)))
@@ -202,13 +202,13 @@ def time_lock_lick(an, lick_idx = 0):
 
     # #update the dataframes manually
     a.all_490 = tmp.copy()
-    a.mean_490 = tmp.groupby('cond', axis = 1).mean()
-    a.err_490 = tmp.groupby('cond', axis = 1).sem()
+    a.mean_490 = tmp.groupby('cond', axis = 1).mean(numeric_only=True)
+    a.err_490 = tmp.groupby('cond', axis = 1).sem(numeric_only=True)
     a.t_endrec = tmp.index[-1]
 
     a.all_405 = tmp2.copy()
-    a.mean_405 = tmp2.groupby('cond', axis = 1).mean()
-    a.err_405 = tmp2.groupby('cond', axis = 1).sem()
+    a.mean_405 = tmp2.groupby('cond', axis = 1).mean(numeric_only=True)
+    a.err_405 = tmp2.groupby('cond', axis = 1).sem(numeric_only=True)
     return a
 
 
