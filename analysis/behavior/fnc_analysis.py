@@ -50,7 +50,7 @@ def average_test_data(df, Chr2, values = 'total_licks'):
 
 def lick_microstructure(dft, dur, thresh = 0.5):
     
-    dtg = dft.reset_index().set_index(['Chr2','sex','mouse', 'day', 'CS', 'lick_number']).time
+    dtg = dft.reset_index().set_index(['Chr2','sex','mouse', 'day', 'CS', 'lick_number']).time.sort_index()
     dtg = dtg - dtg.loc[:,:,:,:,:,0]
     dtg = dtg.loc[dtg<(dur*60)]
 
@@ -379,7 +379,7 @@ def plot_sex_diff_pref(pref, ax = None, mt_method = "holm-sidak", palette ='magm
                      .apply(lambda x: smf.glm('pref ~ 1 + Chr2', data = x, 
                                               family = sm.families.Binomial(), 
                                               freq_weights = x.tot).fit())
-                     .apply(lambda x:  pd.Series({'coef': x.params['Chr2[T.True]'].rounastype(str) + "±" + x.bse['Chr2[T.True]'].astype(str), 
+                     .apply(lambda x:  pd.Series({'coef': x.params['Chr2[T.True]'].astype(str) + "±" + x.bse['Chr2[T.True]'].astype(str), 
                                                   't': x.tvalues['Chr2[T.True]'], 
                                                   'CI': x.conf_int().apply(lambda x: x.round(4).astype(str).loc[0] + ', ' + x.round(4).astype(str).loc[1], axis=1).loc['Chr2[T.True]'],
                                                   'p-value': x.pvalues['Chr2[T.True]'],
