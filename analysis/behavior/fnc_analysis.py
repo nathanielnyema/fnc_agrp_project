@@ -20,7 +20,7 @@ def load_data(fpath):
     read the data from te specified file into a pandas dataframe
     """
     df = pd.read_csv(fpath)
-    df = df.set_index(['Chr2','US', 'mouse', 'phase', 'day','CS']).sort_index()
+    df = df.set_index(['Chr2', 'mouse', 'phase', 'day','CS']).sort_index()
     return df
 
 
@@ -28,13 +28,13 @@ def load_data(fpath):
 ## FUNCTIONS TO REFORMAT DATA ##
 ################################
 
-def subset_df(df, us, phase):
+def subset_df(df, phase):
     """
     subset the dataframe loaded in load_data on just the data
     for a particular unconditioned stimulus ('glucose' or 'fat')
     and a particular phase of the experiment ('training' or 'test')
     """
-    return df.loc[:,us,:,phase]
+    return df.loc[:,:,phase]
 
 
 def average_test_data(df, Chr2, values = 'total_licks'):
