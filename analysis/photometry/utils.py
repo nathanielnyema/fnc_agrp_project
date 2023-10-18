@@ -181,23 +181,23 @@ def plot_peri(mn, ctl = None, phase="Training", saveroot = "", savename = "", fi
 
     return fig, ax
 
-def time_lock_lick(an, lick_idx = 0):
+def time_lock_lick(an, lick_idx = 0, lick_field = 'all_licks'):
     """
     function for time locking each traces to a specified lick during the corresponding session
     """
     a = deepcopy(an)
-    max_shift = round(max([i.events['left_licks'][lick_idx] for i in a.normed_data])) * a.ds_freq
+    max_shift = round(max([i.events[lick_field][lick_idx] for i in a.normed_data])) * a.ds_freq
     tmp = pd.DataFrame([], columns = a.all_490.columns)
     tmp2 = pd.DataFrame([], columns = a.all_405.columns)
 
     for i in a.normed_data:
 
         x = a.all_490[pd.IndexSlice[i.cond,i.mouse_id]].values
-        x = np.roll(x, -round(i.events['left_licks'][lick_idx])* a.ds_freq )[:-max_shift]
+        x = np.roll(x, -round(i.events[lick_field][lick_idx])* a.ds_freq )[:-max_shift]
         tmp[pd.IndexSlice[i.cond,i.mouse_id]] = pd.Series(x, index = np.arange(-a.t_prestim, 1800 - (max_shift-1)/a.ds_freq, step = 1/a.ds_freq))
 
         y = a.all_405[pd.IndexSlice[i.cond,i.mouse_id]].values
-        y = np.roll(y, -round(i.events['left_licks'][lick_idx])* a.ds_freq )[:-max_shift]
+        y = np.roll(y, -round(i.events[lick_field][lick_idx])* a.ds_freq )[:-max_shift]
         tmp2[pd.IndexSlice[i.cond,i.mouse_id]] = pd.Series(y, index = np.arange(-a.t_prestim, 1800 - (max_shift-1)/a.ds_freq, step = 1/a.ds_freq))
 
     # #update the dataframes manually
@@ -209,6 +209,7 @@ def time_lock_lick(an, lick_idx = 0):
     a.all_405 = tmp2.copy()
     a.mean_405 = tmp2.groupby('cond', axis = 1).mean(numeric_only=True)
     a.err_405 = tmp2.groupby('cond', axis = 1).sem(numeric_only=True)
+
     return a
 
 
@@ -252,9 +253,9 @@ def get_bn(x, lick_event, bout_event):
         # this is especially important for testing where a bout may contain licks from
         bout_label = np.digitize(licks, bouts, right=False)-1
         bns = np.array([(bout_label==i).sum() for i in np.unique(bout_label)])
-        return pd.Series(bns, index = pd.Index(np.arange(bns.size), name = 'event') )
+        return bns
     else:
-        return pd.Series([], dtype = np.float64, index = pd.Index([], name = 'event') )
+        return np.array([])
         
 
 def agrp_model(x, h1, w1, loc1, ret, w2, dloc2):

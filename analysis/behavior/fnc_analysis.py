@@ -94,7 +94,8 @@ def lick_microstructure(dft, dur, thresh = 0.5):
 ############################
 
 def two_bottle_plot(s, c, ax = None, mt_method = "holm-sidak", palette ='magma', lw = 1.5, ms = 5, y = 'total_licks',
-                    plot_sig = True, alpha = .3, all_paired = False, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], t=30):
+                    plot_sig = True, alpha = .2, all_paired = False, groups=[r'$AgRP^{Chr2}$', r'$AgRP^{TdTomato}$'], t=30,
+                    errwidth = 1, capsize = .1):
     """
     box plot comparing total average testing day licks for stim and ctl
     
@@ -115,8 +116,9 @@ def two_bottle_plot(s, c, ax = None, mt_method = "holm-sidak", palette ='magma',
                     axis=0, names=['Condition']).reset_index()
     
     g = sns.barplot(data=svc, x = 'Condition', y= y, saturation = 1,
-                hue = 'CS', hue_order = ['-', '+'], order = groups[::-1], 
-                errorbar=None, ax = ax, palette = palette)
+                    hue = 'CS', hue_order = ['-', '+'], order = groups[::-1], 
+                    errorbar= 'se', ax = ax, palette = palette, 
+                    capsize = capsize, errwidth = errwidth )
     handles, _ = g.get_legend_handles_labels()
     
     check_bar = lambda x: isinstance(x, mpl.patches.Rectangle)
